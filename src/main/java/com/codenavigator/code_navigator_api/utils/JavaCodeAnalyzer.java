@@ -19,17 +19,14 @@ import java.util.zip.ZipInputStream;
 
 public class JavaCodeAnalyzer {
 
-    public List<CompilationUnit> analyzeFromZip(MultipartFile zipFile) throws IOException {
-        // 1. Criar diretório temporário
-        Path tempDir = Files.createTempDirectory("code-analysis-temp");
+    public List<CompilationUnit> analyzeFromZip(MultipartFile zipFile, Path tempDir) throws IOException {
 
-        // 2. Extrair arquivos .java
         unzipJavaFiles(zipFile, tempDir);
 
-        // 3. Configurar SymbolSolver
         CombinedTypeSolver typeSolver = new CombinedTypeSolver();
         typeSolver.add(new ReflectionTypeSolver());
         typeSolver.add(new JavaParserTypeSolver(tempDir));
+        typeSolver.add(new JavaParserTypeSolver(tempDir+"/src/main/java//"));
 
         JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
         StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
@@ -46,9 +43,6 @@ public class JavaCodeAnalyzer {
                         System.err.println("Erro ao parsear " + path + ": " + e.getMessage());
                     }
                 });
-
-        // 5. (Opcional) Apagar os arquivos temporários
-        deleteTempDirectory(tempDir);
 
         return units;
     }
@@ -67,19 +61,5 @@ public class JavaCodeAnalyzer {
         }
     }
 
-    private void deleteTempDirectory(Path directory) {
-        try {
-            Files.walk(directory)
-                .sorted(Comparator.reverseOrder())
-                .forEach(p -> {
-                    try {
-                        Files.delete(p);
-                    } catch (IOException e) {
-                        System.err.println("Erro ao deletar: " + p + " - " + e.getMessage());
-                    }
-                });
-        } catch (IOException e) {
-            System.err.println("Erro ao limpar diretório temporário: " + e.getMessage());
-        }
-    }
+
 }

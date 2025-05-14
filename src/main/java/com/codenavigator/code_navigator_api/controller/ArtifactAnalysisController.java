@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -131,12 +132,18 @@ public class ArtifactAnalysisController {
         if (artifactIsNotZipOrIsEmpty(artifact)) {
             return ResponseEntity.badRequest().body("The file must be a non-empty .zip containing .java files.");
         }
+        
+        Path tempDir = Files.createTempDirectory("code-analysis-temp");
+        
         JavaCodeAnalyzer analyzer = new JavaCodeAnalyzer();
         
-        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact);
+        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact, tempDir);
         
         HashMap<String, Classe> classes = classFactory(units);
-                
+        
+        
+        deleteTempDirectory(tempDir);
+        
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writeValueAsString(classes);
         
@@ -149,11 +156,18 @@ public class ArtifactAnalysisController {
         if (artifactIsNotZipOrIsEmpty(artifact)) {
             return ResponseEntity.badRequest().body("The file must be a non-empty .zip containing .java files.");
         }
+        
+        Path tempDir = Files.createTempDirectory("code-analysis-temp");
+        
         JavaCodeAnalyzer analyzer = new JavaCodeAnalyzer();
         
-        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact);
+        
+        
+        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact, tempDir);
         
         HashMap<String, Classe> classes = classFactory(units);
+        
+        deleteTempDirectory(tempDir);
         
         ObjectMapper mapper = new ObjectMapper();
         
@@ -178,13 +192,16 @@ public class ArtifactAnalysisController {
         		
         		nodeMetodo.put("assinatura",  assinatura);
         		nodeMetodo.put("corpo",  setMetodo.getValue().getCorpo());
- 
+        		ArrayNode arrayNodeChamadasFeitas = mapper.createArrayNode();
         		for(Chamada chamada: setMetodo.getValue().getChamadas()) {
-        			        			
+        			    			
         			ArrayList<Metodo> listaChamadas = new ArrayList<Metodo>();
+        			
+        			
+        			
         			resolveMethodSignature(classes, chamada,listaChamadas);
         			
-        			ArrayNode arrayNodeChamadasFeitas = mapper.createArrayNode();
+        			
         			for(Metodo ch: listaChamadas) {
         				ObjectNode nodeMetodoChamadaFeitas = mapper.createObjectNode();
         				nodeMetodoChamadaFeitas.put("assinatura", ch.getAssinatura());
@@ -192,9 +209,11 @@ public class ArtifactAnalysisController {
         				arrayNodeChamadasFeitas.add(nodeMetodoChamadaFeitas);
         			}
         
-        			nodeMetodo.put("chamadas", arrayNodeChamadasFeitas);
+        			
         			
         		}
+        		
+        		nodeMetodo.put("chamadas", arrayNodeChamadasFeitas);
         		arrayNodeMetodos.add(nodeMetodo);
         		nodeClasse.put("metodos", arrayNodeMetodos);
         		
@@ -263,5 +282,21 @@ public class ArtifactAnalysisController {
 	        resolveMethodSignature(classes, chamadaInterna, listaChamadas);
 	    }
 	}
+	
+    private void deleteTempDirectory(Path directory) {
+        try {
+            Files.walk(directory)
+                .sorted(Comparator.reverseOrder())
+                .forEach(p -> {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException e) {
+                        System.err.println("Erro ao deletar: " + p + " - " + e.getMessage());
+                    }
+                });
+        } catch (IOException e) {
+            System.err.println("Erro ao limpar diretório temporário: " + e.getMessage());
+        }
+    }
 
 }
