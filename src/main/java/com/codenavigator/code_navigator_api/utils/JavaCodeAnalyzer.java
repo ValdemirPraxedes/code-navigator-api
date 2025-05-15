@@ -21,12 +21,11 @@ public class JavaCodeAnalyzer {
 
     public List<CompilationUnit> analyzeFromZip(MultipartFile zipFile, Path tempDir) throws IOException {
 
-        unzipJavaFiles(zipFile, tempDir);
-
+        //unzipJavaFiles(zipFile, tempDir);
+        System.out.println(tempDir);
         CombinedTypeSolver typeSolver = new CombinedTypeSolver();
         typeSolver.add(new ReflectionTypeSolver());
         typeSolver.add(new JavaParserTypeSolver(tempDir));
-        typeSolver.add(new JavaParserTypeSolver(tempDir+"/src/main/java//"));
 
         JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
         StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);

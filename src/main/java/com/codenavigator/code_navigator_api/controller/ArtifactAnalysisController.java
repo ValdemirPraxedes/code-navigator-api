@@ -35,6 +35,9 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.codenavigator.code_navigator_api.dominio.*;
+import com.codenavigator.code_navigator_api.infrastructure.DirectoryTempCreator;
+import com.codenavigator.code_navigator_api.infrastructure.JavaSourceRootResolver;
+import com.codenavigator.code_navigator_api.infrastructure.ZipExtractionDirectoryCreatorAdapter;
 
 @RestController
 @RequestMapping("/analysis")
@@ -129,24 +132,40 @@ public class ArtifactAnalysisController {
 	
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<String>  getArtifactList(@RequestParam("artifact") MultipartFile artifact) throws IOException {
+		
+		
+		//validação
         if (artifactIsNotZipOrIsEmpty(artifact)) {
             return ResponseEntity.badRequest().body("The file must be a non-empty .zip containing .java files.");
         }
         
-        Path tempDir = Files.createTempDirectory("code-analysis-temp");
+        //instanciação de classe
+        HashMap<String, Classe> classes = null;
         
+        //criação de directorio temporario
+        try(ZipExtractionDirectoryCreatorAdapter directoryTempCreator = ZipExtractionDirectoryCreatorAdapter.from(artifact.getInputStream(),"code-analysis-temp")) {
+        
+        
+        //instanciação de classe
         JavaCodeAnalyzer analyzer = new JavaCodeAnalyzer();
         
-        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact, tempDir);
+        // analise de arquivo zip com a pasta temporaria como dependencia
+        List<CompilationUnit> units = analyzer.analyzeFromZip(artifact, JavaSourceRootResolver.resolveSourceRoot(directoryTempCreator.getPath()));
         
-        HashMap<String, Classe> classes = classFactory(units);
+        //transformação de dados List<CompilationUnit> em HashMap<String, Classe>
+         classes = classFactory(units);
         
         
-        deleteTempDirectory(tempDir);
         
+        }
+        //instaciacao de classe 
         ObjectMapper objectMapper = new ObjectMapper();
+        
+        //Conversão do hashMap em um json String
         String json = objectMapper.writeValueAsString(classes);
         
+        
+        //Retorno do endpoint com status 200 
         return ResponseEntity.ok(json);
 	}
 	
