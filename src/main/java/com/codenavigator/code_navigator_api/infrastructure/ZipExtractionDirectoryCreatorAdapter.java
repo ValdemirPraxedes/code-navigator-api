@@ -3,6 +3,7 @@ package com.codenavigator.code_navigator_api.infrastructure;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -36,6 +37,14 @@ public class ZipExtractionDirectoryCreatorAdapter implements AutoCloseable {
             throw new InfrastructureException("Erro ao extrair zip", e);
         }
     }
+    
+	public void walkFile(Consumer<Path> file) {
+	    directoryTempCreator.walkFile(path -> {
+	        if (Files.isRegularFile(path) && path.toString().endsWith(".java")) {
+	            file.accept(path);
+	        }
+	    });
+	}
 
     public Path getPath() {
         return directoryTempCreator.getPath();

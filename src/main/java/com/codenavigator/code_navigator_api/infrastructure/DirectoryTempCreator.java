@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.function.Consumer;
+
 import com.codenavigator.code_navigator_api.exceptions.InfrastructureException;
 
 public final class DirectoryTempCreator implements AutoCloseable {
@@ -20,6 +22,14 @@ public final class DirectoryTempCreator implements AutoCloseable {
 			return new DirectoryTempCreator(path);
 		} catch (IOException e) {
 			throw new InfrastructureException("Error creating directory: " + name, e);
+		}
+	}
+	
+	public void walkFile(Consumer<Path> file) {
+		try {
+			Files.walk(this.path).forEach(file);
+		} catch (IOException e) {
+			throw new InfrastructureException("Error accessing file or directory: ", e);
 		}
 	}
 
