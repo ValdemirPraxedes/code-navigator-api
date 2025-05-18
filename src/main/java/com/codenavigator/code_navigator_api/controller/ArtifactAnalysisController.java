@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.codenavigator.code_navigator_api.dominio.Classe;
+import com.codenavigator.code_navigator_api.dominio.SpringRestAnnotationsEnum;
 import com.codenavigator.code_navigator_api.service.ArtifactAnalysisService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,6 +54,22 @@ public class ArtifactAnalysisController {
 
 
 		JsonNode json = analyzer.analizeFromZipComplete(artifact, "code-analysis-temp");
+
+		return ResponseEntity.ok(json.toPrettyString());
+
+	}
+	
+	@PostMapping(path = "/controller", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> getArtifactController(@RequestParam("artifact") MultipartFile artifact)
+			throws IOException {
+		if (isInvalidZip(artifact)) {
+			return ResponseEntity.badRequest().body("The file must be a non-empty .zip containing .java files.");
+		}
+
+		ArtifactAnalysisService analyzer = new ArtifactAnalysisService();
+
+
+		JsonNode json = analyzer.analizeFromZipComplete(artifact, "code-analysis-temp", SpringRestAnnotationsEnum.REST_CONTROLLER.value);
 
 		return ResponseEntity.ok(json.toPrettyString());
 

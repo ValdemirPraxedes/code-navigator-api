@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.web.multipart.MultipartFile;
 import com.codenavigator.code_navigator_api.core.analyzer.AbstractClassAnalyzer;
 import com.codenavigator.code_navigator_api.core.analyzer.SpringClassAnalyzer;
 import com.codenavigator.code_navigator_api.dominio.Classe;
+import com.codenavigator.code_navigator_api.dominio.SpringRestAnnotationsEnum;
 import com.codenavigator.code_navigator_api.factory.JavaParserFactory;
 import com.codenavigator.code_navigator_api.infrastructure.ZipExtractionDirectoryCreatorAdapter;
 import com.codenavigator.code_navigator_api.output.ClasseJsonExporter;
@@ -28,16 +32,19 @@ public class ArtifactAnalysisService {
 		
 	}
 	
-	public JsonNode analizeFromZipComplete(MultipartFile zipFile, String name) throws IOException {
+	public JsonNode analizeFromZipComplete(MultipartFile zipFile, String name) throws IOException{
+		return analizeFromZipComplete(zipFile, name, null);
+	}
+	
+	public JsonNode analizeFromZipComplete(MultipartFile zipFile, String name, String filter) throws IOException {
 
 		try (ZipExtractionDirectoryCreatorAdapter directoryTempCreator = ZipExtractionDirectoryCreatorAdapter
 				.from(zipFile.getInputStream(), name)) {
 			
 			 HashMap<String, Classe> classes = createHashMap(directoryTempCreator);
-			 
-			 ClasseJsonExporter classeJsonExporter = new ClasseJsonExporter();
+			 			 
 				
-			return classeJsonExporter.exportAsJson(classes);
+			return new ClasseJsonExporter().exportAsJson(classes, filter);
 		}
 		
 	}

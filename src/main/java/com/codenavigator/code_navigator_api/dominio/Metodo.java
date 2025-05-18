@@ -9,6 +9,7 @@ public class Metodo {
 		private String corpo;
 		private String url;
 		private String tipo;
+		private String metodo;
 		
 		private List<Chamada> chamadas = new ArrayList<Chamada>();
 
@@ -50,5 +51,13 @@ public class Metodo {
 
 		public void setTipo(String tipo) {
 			this.tipo = tipo;
+		}
+
+		public String getMetodo() {
+			return metodo;
+		}
+
+		public void setMetodo(String metodo) {
+			this.metodo = metodo;
 		}
 }
